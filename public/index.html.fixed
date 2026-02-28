@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sovereign Skill Hub</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f4f4f7;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #7c3aed, #a855f7, #7c3aed);
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: #fff;
+    }
+
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1.05rem;
+      opacity: 0.85;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: -2rem auto 3rem;
+      padding: 0 1rem;
+    }
+
+    /* --- Tabs --- */
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 0.65rem 0.4rem;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 2px solid #e0dce8;
+      border-radius: 10px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .tab-btn.active {
+      border-color: #7c3aed;
+      color: #7c3aed;
+      background: #f5f0ff;
+    }
+
+    .tab-btn:hover:not(.active) {
+      border-color: #bbb;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* --- Card --- */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      color: #1a1a2e;
+    }
+
+    .card .card-sub {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+
+    /* --- Form Controls --- */
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.95rem;
+      color: #1a1a2e;
+      background: #fafafa;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 1rem;
+      -webkit-appearance: none;
+    }
+
+    select {
+      background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 0.85rem center;
+      padding-right: 2.5rem;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-create {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .btn-create:hover {
+      background: #15803d;
+    }
+
+    .btn-create:active {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* --- Skills List --- */
+    .skill-list {
+      list-style: none;
+    }
+
+    .skill-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .skill-item:last-child {
+      border-bottom: none;
+    }
+
+    .skill-number {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #ede9fe;
+      color: #7c3aed;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .skill-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1a1a2e;
+    }
+
+    .skill-desc {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.15rem;
+      line-height: 1.4;
+    }
+
+    .skill-time {
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-top: 0.25rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 2rem 0;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    /* --- Permit Results --- */
+    .permit-results {
+      display: none;
+    }
+
+    .permit-results.visible {
+      display: block;
+    }
+
+    .permit-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .permit-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .permit-section h3 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #7c3aed;
+      margin-bottom: 0.5rem;
+    }
+
+    .permit-section ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .permit-section ul li {
+      padding: 0.4rem 0 0.4rem 1.25rem;
+      position: relative;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: #333;
+    }
+
+    .permit-section ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.65rem;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #7c3aed;
+    }
+
+    .permit-section ul.notes-list li::before {
+      background: #f59e0b;
+    }
+
+    .permit-section ul.steps-list li::before {
+      background: #16a34a;
+    }
+
+    .permit-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+
+    .meta-badge {
+      flex: 1;
+      min-width: 140px;
+      background: #f5f0ff;
+      border: 1px solid #e8e0f5;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    .meta-badge .meta-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #888;
+      margin-bottom: 0.2rem;
+    }
+
+    .meta-badge .meta-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+
+    .links-list a {
+      color: #7c3aed;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .links-list a:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 1.25rem 0;
+    }
+
+    /* ============================================ */
+    /* ===== AI FUTURES TRADER - DARK THEME ======= */
+    /* ============================================ */
+    .trader-card {
+      background: #0f1117;
+      border: 1px solid #1e2130;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      color: #c8cdd8;
+    }
+
+    .trader-card h2 {
+      color: #e0e4ec;
+      font-size: 1.25rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .trader-card .card-sub {
+      color: #6b7280;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .trader-card label {
+      color: #8b92a5;
+      font-size: 0.72rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .trader-card input,
+    .trader-card textarea {
+      background: #181b27;
+      border: 1.5px solid #2a2e3d;
+      color: #e0e4ec;
+      border-radius: 8px;
+    }
+
+    .trader-card input:focus,
+    .trader-card textarea:focus {
+      border-color: #16a34a;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+      background: #1a1e2c;
+    }
+
+    .trader-card textarea {
+      min-height: 60px;
+    }
+
+    /* Checkbox groups */
+    .check-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.75rem;
+      border: 1.5px solid #2a2e3d;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #8b92a5;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .check-label:hover {
+      border-color: #444;
+    }
+
+    .check-label input {
+      display: none;
+    }
+
+    .check-label input:checked+span {
+      color: #16a34a;
+    }
+
+    .check-label:has(input:checked) {
+      border-color: #16a34a;
+      background: rgba(22, 163, 74, 0.08);
+      color: #22c55e;
+    }
+
+    .check-dot {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #3a3e4d;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .check-label:has(input:checked) .check-dot {
+      border-color: #16a34a;
+      background: #16a34a;
+    }
+
+    .check-label:has(input:checked) .check-dot::after {
+      content: '';
+      width: 5px;
+      height: 8px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      margin-top: -2px;
+    }
+
+    /* Trading hours status */
+    .trading-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .trading-status.open {
+      background: rgba(22, 163, 74, 0.12);
+      color: #22c55e;
+    }
+
+    .trading-status.closed {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .trading-status.open .status-dot {
+      background: #22c55e;
+    }
+
+    .trading-status.closed .status-dot {
+      background: #ef4444;
+      animation: none;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    /* Trader buttons */
+    .trader-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-start {
+      flex: 1;
+      background: #16a34a;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-start:hover {
+      background: #15803d;
+    }
+
+    .btn-stop {
+      flex: 1;
+      background: #dc2626;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-stop:hover {
+      background: #b91c1c;
+    }
+
+    .btn-start:disabled,
+    .btn-stop:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-test-signal {
+      flex: 0 0 auto;
+      background: #4f46e5;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.85rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-test-signal:hover {
+      background: #4338ca;
+    }
+
+    /* Stats row */
+    .trader-stats {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .t-stat {
+      flex: 1;
+      min-width: 100px;
+      background: #181b27;
+      border: 1px solid #2a2e3d;
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      text-align: center;
+    }
+
+    .t-stat-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      margin-bottom: 0.15rem;
+    }
+
+    .t-stat-value {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #e0e4ec;
+    }
+
+    .t-stat-value.positive {
+      color: #22c55e;
+    }
+
+    .t-stat-value.negative {
+      color: #ef4444;
+    }
+
+    /* Trade log */
+    .trade-log-wrap {
+      background: #0b0d14;
+      border: 1px solid #1e2130;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .trade-log-header {
+      padding: 0.75rem 1rem;
+      background: #131620;
+      border-bottom: 1px solid #1e2130;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .trade-log-header h3 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #8b92a5;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .log-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .log-live-dot.stopped {
+      background: #6b7280;
+      animation: none;
+    }
+
+    .trade-log {
+      max-height: 420px;
+      overflow-y: auto;
+      padding: 0;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+    }
+
+    .trade-log::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .trade-log::-webkit-scrollbar-track {
+      background: #0b0d14;
+    }
+
+    .trade-log::-webkit-scrollbar-thumb {
+      background: #2a2e3d;
+      border-radius: 3px;
+    }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 90px 70px 55px 100px 120px 1fr;
+      gap: 0;
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #13151e;
+      align-items: center;
+    }
+
+    .log-row:hover {
+      background: #131620;
+    }
+
+    .log-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .log-time {
+      color: #4b5563;
+    }
+
+    .log-market {
+      color: #a78bfa;
+      font-weight: 700;
+    }
+
+    .log-tf {
+      color: #6b7280;
+    }
+
+    .log-pattern {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    .log-action {
+      font-weight: 700;
+    }
+
+    .log-action.long {
+      color: #22c55e;
+    }
+
+    .log-action.short {
+      color: #f97316;
+    }
+
+    .log-action.stopped {
+      color: #ef4444;
+    }
+
+    .log-action.target {
+      color: #22c55e;
+    }
+
+    .log-action.signal {
+      color: #6366f1;
+    }
+
+    .log-action.trailed {
+      color: #f59e0b;
+    }
+
+    .log-action.trail-update {
+      color: #a78bfa;
+      font-weight: 500;
+    }
+
+    .log-action.scanning {
+      color: #4b5563;
+      font-weight: 500;
+    }
+
+    .log-action.system {
+      color: #6b7280;
+    }
+
+    .log-action.tradovate {
+      color: #8b5cf6;
+      font-weight: 700;
+    }
+
+    .log-action.tradovate-err {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .log-detail {
+      color: #8b92a5;
+      font-size: 0.68rem;
+    }
+
+    .log-pnl {
+      font-weight: 700;
+    }
+
+    .log-pnl.pos {
+      color: #22c55e;
+    }
+
+    .log-pnl.neg {
+      color: #ef4444;
+    }
+
+    .log-sltp {
+      display: inline-flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .log-entry-tag {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+
+    .log-sl-tag {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .log-tp-tag {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .log-open-tag {
+      color: #3b82f6;
+    }
+
+    .log-vol {
+      color: #6b7280;
+      font-size: 0.65rem;
+    }
+
+    .log-bias {
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 2px;
+    }
+
+    .log-bias.up {
+      background: rgba(34, 197, 94, 0.12);
+      color: #22c55e;
+    }
+
+    .log-bias.down {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+    }
+
+    .log-bias.side {
+      background: rgba(107, 114, 128, 0.12);
+      color: #9ca3af;
+    }
+
+    .log-conf {
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 2px;
+    }
+
+    .log-conf.high {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .log-conf.med {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+    }
+
+    .log-conf.low {
+      background: rgba(107, 114, 128, 0.12);
+      color: #9ca3af;
+    }
+
+    .log-sent {
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .log-sent.greed {
+      background: rgba(34, 197, 94, 0.1);
+      color: #4ade80;
+    }
+
+    .log-sent.fear {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+    }
+
+    .log-sent.neutral {
+      background: rgba(107, 114, 128, 0.08);
+      color: #6b7280;
+    }
+
+    .log-trail-tag {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+
+    .log-conf-label {
+      font-size: 0.58rem;
+      color: #6b7280;
+      margin-left: 2px;
+      display: inline-block;
+    }
+
+    .log-vol-type {
+      font-size: 0.56rem;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 2px;
+    }
+
+    .log-vol-type.igniting {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .log-vol-type.ending {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+    }
+
+    .log-vol-type.resting {
+      background: rgba(107, 114, 128, 0.08);
+      color: #6b7280;
+    }
+
+    .log-src {
+      font-size: 0.58rem;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-left: 2px;
+    }
+
+    .log-src.polygon {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    .log-src.sim {
+      background: rgba(107, 114, 128, 0.1);
+      color: #6b7280;
+    }
+
+    .log-reason {
+      font-size: 0.62rem;
+      color: #a78bfa;
+      font-style: italic;
+      margin-bottom: 2px;
+      letter-spacing: 0.02em;
+    }
+
+    .log-empty {
+      padding: 2.5rem;
+      text-align: center;
+      color: #3a3e4d;
+      font-size: 0.82rem;
+    }
+
+    /* --- Toast --- */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1a1a2e;
+      color: #fff;
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* --- Journal --- */
+    .journal-section {
+      margin-top: 1.5rem;
+    }
+
+    .journal-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .journal-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: #1a1a2e;
+    }
+
+    .journal-card .journal-sub {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    .journal-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .j-stat {
+      background: #f8f7fc;
+      border: 1px solid #e8e5f0;
+      border-radius: 8px;
+      padding: 0.7rem 0.6rem;
+      text-align: center;
+    }
+
+    .j-stat-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .j-stat-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-top: 2px;
+    }
+
+    .j-stat-value.positive {
+      color: #22c55e;
+    }
+
+    .j-stat-value.negative {
+      color: #ef4444;
+    }
+
+    .journal-toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .journal-toolbar input[type="text"],
+    .journal-toolbar select {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      background: #fff;
+      color: #1a1a2e;
+    }
+
+    .journal-toolbar input[type="text"] {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .journal-toolbar select {
+      min-width: 100px;
+    }
+
+    .journal-toolbar .btn-sm {
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .btn-csv {
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    .btn-csv:hover {
+      background: #6d28d9;
+    }
+
+    .btn-clear {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-clear:hover {
+      background: #dc2626;
+    }
+
+    .journal-table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e8e5f0;
+      border-radius: 8px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .journal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .journal-table th {
+      position: sticky;
+      top: 0;
+      background: #f3f0fa;
+      color: #6b7280;
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid #e8e5f0;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .journal-table th:hover {
+      color: #7c3aed;
+    }
+
+    .journal-table th .sort-arrow {
+      margin-left: 3px;
+      font-size: 0.6rem;
+    }
+
+    .journal-table td {
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid #f0eef5;
+      color: #374151;
+    }
+
+    .journal-table tr:hover td {
+      background: #faf8ff;
+    }
+
+    .journal-table .win {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .journal-table .loss {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    .journal-table .breakeven {
+      color: #9ca3af;
+      font-weight: 600;
+    }
+
+    .journal-table .pnl-pos {
+      color: #16a34a;
+      font-weight: 600;
+    }
+
+    .journal-table .pnl-neg {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .journal-table .dir-long {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .journal-table .dir-short {
+      color: #f97316;
+      font-weight: 600;
+    }
+
+    .journal-table .notes-cell {
+      max-width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      color: #7c3aed;
+    }
+
+    .journal-table .notes-cell:hover {
+      text-decoration: underline;
+    }
+
+    .journal-empty {
+      padding: 2rem;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+
+    .settings-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .settings-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      color: #1a1a2e;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .settings-grid label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.2rem;
+      display: block;
+    }
+
+    .settings-grid input,
+    .settings-grid select {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.82rem;
+    }
+
+    .btn-save-settings {
+      padding: 0.5rem 1.2rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    .btn-save-settings:hover {
+      background: #6d28d9;
+    }
+
+    .edge-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .edge-card h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 0.3rem;
+      color: #1a1a2e;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .edge-card h3 .edge-icon {
+      font-size: 1.3rem;
+    }
+
+    .edge-card .edge-sub {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-bottom: 1.2rem;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .edge-overall {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .edge-metric {
+      background: linear-gradient(135deg, #f5f0ff, #ede9fe);
+      border: 1px solid #ddd6fe;
+      border-radius: 10px;
+      padding: 0.9rem 0.7rem;
+      text-align: center;
+    }
+
+    .edge-metric .em-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #7c3aed;
+      margin-bottom: 0.2rem;
+    }
+
+    .edge-metric .em-value {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #1a1a2e;
+    }
+
+    .edge-metric .em-value.positive {
+      color: #16a34a;
+    }
+
+    .edge-metric .em-value.negative {
+      color: #ef4444;
+    }
+
+    .edge-section-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 1.5rem 0 0.7rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid #e8e5f0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .edge-section-title .est {
+      font-size: 1rem;
+    }
+
+    .edge-group-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .edge-group-table th {
+      background: #f8f7fc;
+      color: #7c3aed;
+      font-weight: 700;
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+      border-bottom: 2px solid #e8e5f0;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .edge-group-table td {
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid #f0eef5;
+      color: #374151;
+    }
+
+    .edge-group-table tr:hover td {
+      background: #faf8ff;
+    }
+
+    .edge-group-table .pnl-pos {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .edge-group-table .pnl-neg {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    .edge-group-table .wr-high {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    .edge-group-table .wr-low {
+      color: #ef4444;
+      font-weight: 700;
+    }
+
+    .edge-heatmap {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .hm-cell {
+      border-radius: 8px;
+      padding: 0.65rem 0.5rem;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .hm-cell .hm-name {
+      font-size: 0.68rem;
+      font-weight: 800;
+      margin-bottom: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .hm-cell .hm-wr {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .hm-cell .hm-pnl {
+      font-size: 0.65rem;
+      margin-top: 0.1rem;
+    }
+
+    .hm-hot {
+      background: rgba(22, 163, 74, 0.1);
+      border-color: rgba(22, 163, 74, 0.25);
+      color: #16a34a;
+    }
+
+    .hm-warm {
+      background: rgba(234, 179, 8, 0.1);
+      border-color: rgba(234, 179, 8, 0.25);
+      color: #ca8a04;
+    }
+
+    .hm-cold {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #ef4444;
+    }
+
+    .hm-neutral {
+      background: rgba(107, 114, 128, 0.08);
+      border-color: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+    }
+
+    .edge-recs {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .edge-recs li {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #92400e;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .edge-recs li .rec-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .conf-checklist {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .conf-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .conf-dot.on {
+      background: #22c55e;
+    }
+
+    .conf-dot.off {
+      background: #e5e7eb;
+    }
+
+    .conf-tooltip {
+      position: relative;
+      cursor: help;
+    }
+
+    .conf-tooltip .conf-tip-text {
+      visibility: hidden;
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .conf-tooltip:hover .conf-tip-text {
+      visibility: visible;
+    }
+
+    .pattern-lib {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .pl-card {
+      background: #f8f7fc;
+      border: 1px solid #e8e5f0;
+      border-radius: 10px;
+      padding: 1rem;
+      transition: box-shadow 0.15s;
+    }
+
+    .pl-card:hover {
+      box-shadow: 0 2px 12px rgba(124, 58, 237, 0.12);
+    }
+
+    .pl-card .pl-name {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #7c3aed;
+      margin-bottom: 0.2rem;
+    }
+
+    .pl-card .pl-dir {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .pl-card .pl-dir.long {
+      color: #16a34a;
+    }
+
+    .pl-card .pl-dir.short {
+      color: #ef4444;
+    }
+
+    .pl-card .pl-desc {
+      font-size: 0.78rem;
+      color: #4b5563;
+      line-height: 1.45;
+      margin-bottom: 0.4rem;
+    }
+
+    .pl-card .pl-rules {
+      font-size: 0.72rem;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .pl-card .pl-rules b {
+      color: #374151;
+    }
+
+    .pl-card .pl-tag {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+
+    .pl-tag.reversal {
+      background: rgba(234, 179, 8, 0.15);
+      color: #b45309;
+    }
+
+    .pl-tag.continuation {
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563eb;
+    }
+
+    .pl-tag.momentum {
+      background: rgba(22, 163, 74, 0.15);
+      color: #15803d;
+    }
+
+    .pl-tag.exhaustion {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+
+    .edge-empty {
+      text-align: center;
+      padding: 2.5rem;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Sovereign Skill Hub</h1>
+    <p>Build powerful AI agents &amp; skills in minutes. Earn while others use them.</p>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="create" onclick="switchTab('create')">Create a Skill</button>
+      <button class="tab-btn" data-tab="permit" onclick="switchTab('permit')">Permit Checker</button>
+      <button class="tab-btn" data-tab="trader" onclick="switchTab('trader')">AI Futures Trader</button>
+      <button class="tab-btn" data-tab="edge" onclick="switchTab('edge');loadEdgeBuilder()"
+        data-testid="tab-edge-builder">Edge Builder</button>
+    </div>
+
+    <!-- TAB 1: Create a Skill -->
+    <div id="panel-create" class="tab-panel active">
+      <div class="card">
+        <h2>Create a Skill</h2>
+        <form id="skill-form">
+          <label for="name">Skill Name</label>
+          <input id="name" type="text" placeholder="e.g. Blog Post Writer" required />
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="What does this skill do?"></textarea>
+          <button type="submit" class="btn btn-create">Create Skill &amp; Test</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Skills Created</h2>
+        <ul id="skill-list" class="skill-list">
+          <li class="empty">No skills yet. Create your first one above.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- TAB 2: Florida Permit Checker -->
+    <div id="panel-permit" class="tab-panel">
+      <div class="card">
+        <h2>Florida Permit Checker</h2>
+        <p class="card-sub">Find out exactly which permits you need for your renovation in Central Florida.</p>
+        <form id="permit-form">
+          <label for="renovationType">Renovation Type</label>
+          <select id="renovationType" required>
+            <option value="">Select renovation...</option>
+            <option value="kitchen">Kitchen Remodel</option>
+            <option value="bathroom">Bathroom Remodel</option>
+            <option value="roof">Roof Replacement</option>
+            <option value="addition">Room Addition</option>
+            <option value="pool">Pool Installation</option>
+            <option value="electrical">Electrical Upgrade</option>
+            <option value="plumbing">Plumbing Upgrade</option>
+            <option value="other">Other</option>
+          </select>
+          <label for="propertyType">Property Type</label>
+          <select id="propertyType" required>
+            <option value="">Select property type...</option>
+            <option value="single_family">Single Family</option>
+            <option value="multifamily">Multifamily</option>
+            <option value="commercial">Commercial</option>
+          </select>
+          <label for="county">County</label>
+          <select id="county" required>
+            <option value="">Select county...</option>
+            <option value="polk">Polk County / Lakeland</option>
+            <option value="orange">Orange County / Orlando</option>
+            <option value="hillsborough">Hillsborough County</option>
+            <option value="pasco">Pasco County</option>
+            <option value="other">Other Florida County</option>
+          </select>
+          <label for="details">Additional Details (optional)</label>
+          <textarea id="details" placeholder="e.g. Moving gas line, adding a second story..."></textarea>
+          <button type="submit" class="btn btn-create">Check Required Permits</button>
+        </form>
+      </div>
+      <div id="permit-results" class="permit-results">
+        <div class="card" id="permit-output"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: AI Futures Trader -->
+    <div id="panel-trader" class="tab-panel">
+      <div class="trader-card">
+        <h2>AI Futures Trader</h2>
+        <p class="card-sub">Autonomous pattern-based futures engine (9/21 EMA + 200 SMA, trailing stops, confluence
+          scoring). Based on Jared Wesley's "Trading With An Edge" (Live Traders).</p>
+
+        <div id="trader-status-badge" class="trading-status closed">
+          <span class="status-dot"></span>
+          <span id="trader-status-text">Checking market hours...</span>
+        </div>
+        <div id="tradovate-status" class="trading-status closed" style="margin-top:0.4rem;"
+          data-testid="tradovate-status">
+          <span class="status-dot"></span>
+          <span id="tradovate-status-text">Tradovate: Checking...</span>
+        </div>
+        <div id="crosstrade-status" class="trading-status closed" style="margin-top:0.4rem;"
+          data-testid="crosstrade-status">
+          <span class="status-dot"></span>
+          <span id="crosstrade-status-text">CrossTrade: Idle</span>
+        </div>
+
+        <label>Equity Index Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="ES" checked /><span
+              class="check-dot"></span><span>E-mini S&amp;P (ES)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="MES" /><span
+              class="check-dot"></span><span>Micro S&amp;P (MES)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="NQ" /><span
+              class="check-dot"></span><span>E-mini Nasdaq (NQ)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="MNQ" /><span
+              class="check-dot"></span><span>Micro Nasdaq (MNQ)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="YM" /><span
+              class="check-dot"></span><span>E-mini Dow (YM)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="MYM" /><span
+              class="check-dot"></span><span>Micro Dow (MYM)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="RTY" /><span
+              class="check-dot"></span><span>E-mini Russell (RTY)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="M2K" /><span
+              class="check-dot"></span><span>Micro Russell (M2K)</span></label>
+        </div>
+
+        <label>Energy Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="CL" /><span
+              class="check-dot"></span><span>Crude Oil (CL)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="MCL" /><span
+              class="check-dot"></span><span>Micro Crude (MCL)</span></label>
+        </div>
+
+        <label>Metals Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="GC" /><span
+              class="check-dot"></span><span>Gold (GC)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="MGC" /><span
+              class="check-dot"></span><span>Micro Gold (MGC)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="SI" /><span
+              class="check-dot"></span><span>Silver (SI)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="HG" /><span
+              class="check-dot"></span><span>Copper (HG)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="PL" /><span
+              class="check-dot"></span><span>Platinum (PL)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="PA" /><span
+              class="check-dot"></span><span>Palladium (PA)</span></label>
+        </div>
+
+        <label>Crypto Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="BTC" /><span
+              class="check-dot"></span><span>Bitcoin (BTC)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ETH" /><span
+              class="check-dot"></span><span>Ether (ETH)</span></label>
+        </div>
+
+        <label>Treasury Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="ZB" /><span
+              class="check-dot"></span><span>30-Yr Bond (ZB)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ZN" /><span
+              class="check-dot"></span><span>10-Yr Note (ZN)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ZF" /><span
+              class="check-dot"></span><span>5-Yr Note (ZF)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ZT" /><span
+              class="check-dot"></span><span>2-Yr Note (ZT)</span></label>
+        </div>
+
+        <label>Agricultural Futures</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="market" value="ZC" /><span
+              class="check-dot"></span><span>Corn (ZC)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ZS" /><span
+              class="check-dot"></span><span>Soybeans (ZS)</span></label>
+          <label class="check-label"><input type="checkbox" name="market" value="ZW" /><span
+              class="check-dot"></span><span>Wheat (ZW)</span></label>
+        </div>
+
+        <label>Timeframes</label>
+        <div class="check-group">
+          <label class="check-label"><input type="checkbox" name="tf" value="2min" checked /><span
+              class="check-dot"></span><span>2 min</span></label>
+          <label class="check-label"><input type="checkbox" name="tf" value="5min" checked /><span
+              class="check-dot"></span><span>5 min</span></label>
+          <label class="check-label"><input type="checkbox" name="tf" value="15min" /><span
+              class="check-dot"></span><span>15 min</span></label>
+          <label class="check-label"><input type="checkbox" name="tf" value="1hour" /><span
+              class="check-dot"></span><span>1 hour</span></label>
+          <label class="check-label"><input type="checkbox" name="tf" value="4hour" /><span
+              class="check-dot"></span><span>4 hour</span></label>
+          <label class="check-label"><input type="checkbox" name="tf" value="daily" /><span
+              class="check-dot"></span><span>Daily</span></label>
+        </div>
+
+        <label>Trading Hours</label>
+        <div
+          style="font-size:0.85rem; color:#6b7280; margin-bottom:0.5rem; padding:0.5rem 0.75rem; background:#181b27; border-radius:8px; border:1px solid #2a2e3d;">
+          Sun 6:00 PM &ndash; Fri 5:00 PM EST &bull; Daily maintenance 5&ndash;6 PM EST
+        </div>
+        <div class="check-group" style="margin-bottom:1rem;">
