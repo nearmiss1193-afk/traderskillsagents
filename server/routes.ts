@@ -5,6 +5,7 @@ import express from "express";
 import { startTrader, stopTrader, getTraderLogs, getTraderStatus, isTradingOpen, isForceTradeActive, getTradovateStatus, connectTradovate, forwardSignalToNgrok } from "./trader";
 import { loadJournal, getJournalStats, getAdvancedAnalytics, updateJournalNotes, deleteJournalEntry, clearJournal, loadSettings, saveSettings } from "./journal";
 import { sendToCrossTrade } from "./services/crosstrade";
+import { loadAccounts, addAccount, updateAccountStatus, getValidAccounts } from "./accounts";
 
 let skills: any[] = [];
 
@@ -298,6 +299,28 @@ export async function registerRoutes(
       account: account
     });
     res.json(result);
+  });
+
+  app.get("/api/accounts", async (_req, res) => {
+    res.json(await loadAccounts());
+  });
+
+  app.get("/api/accounts/active", async (_req, res) => {
+    res.json(await getValidAccounts());
+  });
+
+  app.post("/api/accounts", async (req, res) => {
+    const { name, provider, accountType } = req.body;
+    if (!name || !provider) return res.status(400).json({ error: "Name and provider required" });
+    const account = await addAccount({ name, provider, status: "Active", accountType: accountType || "Evaluation" });
+    res.json({ success: true, account });
+  });
+
+  app.patch("/api/accounts/status", async (req, res) => {
+    const { name, status } = req.body;
+    if (!name || !status) return res.status(400).json({ error: "Name and status required" });
+    const success = await updateAccountStatus(name, status);
+    res.json({ success });
   });
 
   app.get("/api/trade-signals", (_req, res) => {

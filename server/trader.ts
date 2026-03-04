@@ -119,8 +119,8 @@ const FUTURES_SPECS: Record<string, FuturesSpec> = {
   HG: { name: "Copper", basePrice: 4.2, pointValue: 25000, tickSize: 0.0005, volatility: 1.0, avgVolume: 1000, category: "metals" },
   PL: { name: "Platinum", basePrice: 980, pointValue: 50, tickSize: 0.10, volatility: 1.2, avgVolume: 600, category: "metals" },
   PA: { name: "Palladium", basePrice: 1050, pointValue: 100, tickSize: 0.05, volatility: 2.0, avgVolume: 400, category: "metals" },
-  BTC: { name: "Bitcoin Futures", basePrice: 97000, pointValue: 5, tickSize: 5.0, volatility: 3.0, avgVolume: 800, category: "crypto" },
-  ETH: { name: "Ether Futures", basePrice: 3400, pointValue: 50, tickSize: 0.25, volatility: 3.5, avgVolume: 600, category: "crypto" },
+  MBT: { name: "Micro Bitcoin Futures", basePrice: 97000, pointValue: 0.1, tickSize: 5.0, volatility: 3.0, avgVolume: 1200, category: "crypto" },
+  MET: { name: "Micro Ether Futures", basePrice: 3400, pointValue: 0.5, tickSize: 0.50, volatility: 3.5, avgVolume: 1000, category: "crypto" },
   ZB: { name: "30-Year T-Bond", basePrice: 118, pointValue: 1000, tickSize: 0.03125, volatility: 0.4, avgVolume: 1500, category: "bonds" },
   ZN: { name: "10-Year T-Note", basePrice: 110, pointValue: 1000, tickSize: 0.015625, volatility: 0.3, avgVolume: 2000, category: "bonds" },
   ZT: { name: "2-Year T-Note", basePrice: 103, pointValue: 2000, tickSize: 0.0078125, volatility: 0.15, avgVolume: 1500, category: "bonds" },
@@ -130,7 +130,7 @@ const FUTURES_SPECS: Record<string, FuturesSpec> = {
   ZW: { name: "Wheat", basePrice: 560, pointValue: 50, tickSize: 0.25, volatility: 1.2, avgVolume: 1000, category: "ags" },
 };
 
-function getSpec(market: string): FuturesSpec {
+export function getSpec(market: string): FuturesSpec {
   return FUTURES_SPECS[market] || FUTURES_SPECS["ES"];
 }
 
@@ -282,6 +282,20 @@ interface MarketState {
   higherPivotLows: number;
   lowerPivotHighs: number;
   lowerPivotLows: number;
+  adx: number;
+  plusDI: number;
+  minusDI: number;
+  tr: number;
+  dmPlus: number;
+  dmMinus: number;
+  vwap: number;
+  vwapSD1: number;
+  vwapSD2: number;
+  volumeDelta: number;
+  cvd: number;
+  cumulativeVolume: number;
+  cumulativeTypicalPriceVol: number;
+  typicalPriceSquaredVol: number;
 }
 
 interface TraderSession {
@@ -339,7 +353,7 @@ function rand(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-function r2(v: number): number { return Math.round(v * 100) / 100; }
+export function r2(v: number): number { return Math.round(v * 100) / 100; }
 
 function makeBar(open: number, close: number, vol: number, priceScale: number = 1): Bar {
   const spread = Math.abs(close - open);
@@ -354,7 +368,7 @@ function makeBar(open: number, close: number, vol: number, priceScale: number = 
   return { open: r2(open), high, low, close: r2(close), volume: vol, tail: r2(tail), wick: r2(wick), body: r2(body), bullish, range: r2(range) };
 }
 
-function initMarketState(market: string): MarketState {
+export function initMarketState(market: string): MarketState {
   const spec = getSpec(market);
   const pctRange = spec.basePrice * 0.01;
   const base = r2(spec.basePrice + rand(-pctRange, pctRange));
@@ -373,6 +387,8 @@ function initMarketState(market: string): MarketState {
     recentSwingHigh: r2(base + rand(swingRange * 0.5, swingRange * 1.5)), recentSwingLow: r2(base - rand(swingRange * 0.5, swingRange * 1.5)),
     higherPivotHighs: 0, higherPivotLows: 0,
     lowerPivotHighs: 0, lowerPivotLows: 0,
+    adx: 20, plusDI: 20, minusDI: 20, tr: spec.basePrice * 0.001, dmPlus: 0, dmMinus: 0,
+    vwap: base, vwapSD1: 0, vwapSD2: 0, volumeDelta: 0, cvd: 0, cumulativeVolume: 0, cumulativeTypicalPriceVol: 0, typicalPriceSquaredVol: 0,
   };
 }
 
@@ -389,7 +405,7 @@ function updateTrendFromPivots(state: MarketState) {
   }
 }
 
-function generateBar(state: MarketState, market: string = "ES", livePrice?: PolygonPrice | null): Bar {
+export function generateBar(state: MarketState, market: string = "ES", livePrice?: PolygonPrice | null): Bar {
   const spec = getSpec(market);
   const scale = spec.basePrice / 5400;
   state.trendDuration++;
@@ -457,6 +473,32 @@ function generateBar(state: MarketState, market: string = "ES", livePrice?: Poly
 
   const bar = makeBar(open, close, volume, spec.basePrice);
   updateMarketState(state, bar, close, volume);
+  // Update EMAs (Jared Wesley Core)
+  state.ema9 = r2(bar.close * (2 / (9 + 1)) + state.ema9 * (1 - (2 / (9 + 1))));
+  state.ema21 = r2(bar.close * (2 / (21 + 1)) + state.ema21 * (1 - (2 / (21 + 1))));
+
+  // Update VWAP & Order Flow (New)
+  const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+  state.cumulativeVolume += bar.volume;
+  state.cumulativeTypicalPriceVol += (typicalPrice * bar.volume);
+  state.typicalPriceSquaredVol += (typicalPrice * typicalPrice * bar.volume);
+
+  state.vwap = r2(state.cumulativeTypicalPriceVol / state.cumulativeVolume);
+
+  // Standard Deviation Calculation
+  const variance = (state.typicalPriceSquaredVol / state.cumulativeVolume) - (state.vwap * state.vwap);
+  const stdDev = Math.sqrt(Math.max(0, variance));
+  state.vwapSD1 = r2(stdDev);
+  state.vwapSD2 = r2(stdDev * 2);
+
+  // Volume Delta Simulation (Aggressive bias)
+  // In a real-time system, this would come from the trade stream (bid/ask).
+  // For backtest/simulation, we use close relative to bar mid-point as a proxy.
+  const mid = (bar.high + bar.low) / 2;
+  const deltaPct = (bar.close - mid) / (bar.high - bar.low || 1);
+  state.volumeDelta = r2(bar.volume * deltaPct);
+  state.cvd = r2(state.cvd + state.volumeDelta);
+
   return bar;
 }
 
@@ -469,6 +511,23 @@ function updateMarketState(state: MarketState, bar: Bar, close: number, volume: 
 
   if (bar.high > state.recentSwingHigh) state.recentSwingHigh = bar.high;
   if (bar.low < state.recentSwingLow) state.recentSwingLow = bar.low;
+
+  // ADX Calculation (Wilder's Smoothing)
+  const prevClose = state.price - (bar.close - bar.open); // Approximate previous close
+  const tr = Math.max(bar.high - bar.low, Math.abs(bar.high - prevClose), Math.abs(bar.low - prevClose));
+  const dmP = (bar.high - (state.recentSwingHigh - bar.range * 0.1) > (state.recentSwingLow + bar.range * 0.1) - bar.low) ? Math.max(0, bar.high - state.recentSwingHigh) : 0;
+  const dmM = ((state.recentSwingLow + bar.range * 0.1) - bar.low > bar.high - (state.recentSwingHigh - bar.range * 0.1)) ? Math.max(0, state.recentSwingLow - bar.low) : 0;
+
+  state.tr = (state.tr * 13 + tr) / 14;
+  state.dmPlus = (state.dmPlus * 13 + dmP) / 14;
+  state.dmMinus = (state.dmMinus * 13 + dmM) / 14;
+
+  if (state.tr !== 0) {
+    state.plusDI = r2(100 * (state.dmPlus / state.tr));
+    state.minusDI = r2(100 * (state.dmMinus / state.tr));
+    const dx = Math.abs(state.plusDI - state.minusDI) / (state.plusDI + state.minusDI || 1) * 100;
+    state.adx = r2((state.adx * 13 + dx) / 14);
+  }
 
   if (bar.high > state.pivotHigh) {
     const prevPH = state.pivotHigh;
@@ -519,6 +578,15 @@ function updateMarketState(state: MarketState, bar: Bar, close: number, volume: 
   }
 }
 
+export function isNearMA(price: number, ma: number): boolean {
+  if (ma === 0) return false;
+  return Math.abs(price - ma) / ma < 0.0005;
+}
+
+export function isNearPivot(price: number, pivot: number, basePrice: number): boolean {
+  return Math.abs(price - pivot) < basePrice * 0.0008;
+}
+
 function hasBottomingTail(bar: Bar): boolean {
   return bar.tail > bar.body * 1.5 && bar.tail > bar.range * 0.25;
 }
@@ -549,7 +617,7 @@ function isExtendedFromMA(price: number, ma: number): boolean {
   return distanceFromMA(price, ma) > 0.015;
 }
 
-function classifyVolume(bars: Bar[], avgVol: number): "IGNITING" | "ENDING" | "RESTING" | "NORMAL" {
+export function classifyVolume(bars: Bar[], avgVol: number): "IGNITING" | "ENDING" | "RESTING" | "NORMAL" {
   if (bars.length < 3) return "NORMAL";
   const curr = bars[bars.length - 1];
   const prev = bars[bars.length - 2];
@@ -567,8 +635,18 @@ function classifyVolume(bars: Bar[], avgVol: number): "IGNITING" | "ENDING" | "R
   if (curr.volume < avgVol * 0.6 && isNarrowRangeBar(curr, avgRange)) {
     return "RESTING";
   }
-
   return "NORMAL";
+}
+
+export function isVolumeClimax(bars: Bar[], state: MarketState): boolean {
+  return classifyVolume(bars, state.avgVolume) === "ENDING";
+}
+
+export function isMTFAligned(bars: Bar[], direction: "LONG" | "SHORT"): boolean {
+  if (bars.length < 50) return true;
+  const recent = bars.slice(-50);
+  const sma50 = recent.reduce((s, b) => s + b.close, 0) / 50;
+  return direction === "LONG" ? bars[bars.length - 1].close > sma50 : bars[bars.length - 1].close < sma50;
 }
 
 function isEndingVolume(bars: Bar[], avgVol: number): boolean {
@@ -610,13 +688,6 @@ function hasMultipleWideRangeBars(bars: Bar[]): boolean {
   return recent.filter(b => isWideRangeBar(b, avgRange)).length >= 3;
 }
 
-function isNearMA(price: number, ma: number): boolean {
-  return distanceFromMA(price, ma) < 0.003;
-}
-
-function isNearPivot(price: number, pivot: number, basePrice: number): boolean {
-  return Math.abs(price - pivot) < basePrice * 0.0015;
-}
 
 function calcConfluence(factors: boolean[]): number {
   return factors.filter(Boolean).length;
@@ -656,7 +727,7 @@ function howDidItGetHere(bars: Bar[], direction: "LONG" | "SHORT"): { barsInMove
   return { barsInMove, hasLargeAcceleration, isExtended };
 }
 
-function detect3BarPlayBuy(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detect3BarPlayBuy(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 5) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const b = bars.slice(-5);
   const [b0, b1, b2, b3, b4] = b;
@@ -676,9 +747,9 @@ function detect3BarPlayBuy(bars: Bar[], state: MarketState): { detected: boolean
       hasBottomingTail(b3) || hasBottomingTail(b4),
       isNearMA(b4.close, state.ema21) || isNearMA(b4.close, state.ema9),
       state.bias !== "DOWNTREND",
-      isNearPivot(state.price, state.pivotLow, state.price) || isNearPivot(state.price, state.priorPivotLow, state.price),
       quality >= 4,
-      b4.volume > state.avgVolume,
+      state.adx > 30,
+      b4.volume > state.avgVolume * 1.5,
     ];
     const conf = calcConfluence(factors);
     const reasons: string[] = [];
@@ -692,7 +763,7 @@ function detect3BarPlayBuy(bars: Bar[], state: MarketState): { detected: boolean
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detect3BarPlaySell(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detect3BarPlaySell(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 5) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const b = bars.slice(-5);
   const [b0, b1, b2, b3, b4] = b;
@@ -710,9 +781,9 @@ function detect3BarPlaySell(bars: Bar[], state: MarketState): { detected: boolea
       hasToppingTail(b3) || hasToppingTail(b4),
       isNearMA(b4.close, state.ema21) || isNearMA(b4.close, state.ema9),
       state.bias !== "UPTREND",
-      isNearPivot(state.price, state.pivotHigh, state.price) || isNearPivot(state.price, state.priorPivotHigh, state.price),
       quality >= 4,
-      b4.volume > state.avgVolume,
+      state.adx > 30,
+      b4.volume > state.avgVolume * 1.5,
     ];
     const conf = calcConfluence(factors);
     const reasons: string[] = [];
@@ -726,7 +797,7 @@ function detect3BarPlaySell(bars: Bar[], state: MarketState): { detected: boolea
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detectBuySetup(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detectBuySetup(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 6) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const recent = bars.slice(-6);
   const curr = recent[recent.length - 1];
@@ -739,7 +810,8 @@ function detectBuySetup(bars: Bar[], state: MarketState): { detected: boolean; c
     const factors = [
       curr.bullish,
       hasBottomingTail(prev) || hasBottomingTail(curr),
-      curr.volume > state.avgVolume,
+      curr.volume > state.avgVolume * 1.5,
+      state.adx > 30,
       isIgnitingVolume(bars, state.avgVolume),
       isNearPivot(prev.low, state.pivotLow, state.price) || isNearPivot(prev.low, state.priorPivotLow, state.price),
       isNearMA(prev.low, state.ema21) || isNearMA(prev.low, state.ema9),
@@ -749,6 +821,10 @@ function detectBuySetup(bars: Bar[], state: MarketState): { detected: boolean; c
       state.bias === "UPTREND" || state.bias === "SIDEWAYS",
       quality >= 3,
       context.barsInMove >= 5,
+      // VWAP & Order Flow Filters (New)
+      state.price > state.vwap, // Above value
+      state.volumeDelta > 0, // Positive delta
+      state.price < state.vwap + state.vwapSD1, // Not overextended
     ];
     const conf = calcConfluence(factors);
     const reasons: string[] = [];
@@ -764,7 +840,7 @@ function detectBuySetup(bars: Bar[], state: MarketState): { detected: boolean; c
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detectSellSetup(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detectSellSetup(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 6) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const recent = bars.slice(-6);
   const curr = recent[recent.length - 1];
@@ -777,7 +853,8 @@ function detectSellSetup(bars: Bar[], state: MarketState): { detected: boolean; 
     const factors = [
       !curr.bullish,
       hasToppingTail(prev) || hasToppingTail(curr),
-      curr.volume > state.avgVolume,
+      curr.volume > state.avgVolume * 1.5,
+      state.adx > 30,
       isIgnitingVolume(bars, state.avgVolume),
       isNearPivot(prev.high, state.pivotHigh, state.price) || isNearPivot(prev.high, state.priorPivotHigh, state.price),
       isNearMA(prev.high, state.ema21) || isNearMA(prev.high, state.ema9),
@@ -787,6 +864,10 @@ function detectSellSetup(bars: Bar[], state: MarketState): { detected: boolean; 
       state.bias === "DOWNTREND" || state.bias === "SIDEWAYS",
       quality >= 3,
       context.barsInMove >= 5,
+      // VWAP & Order Flow Filters (New)
+      state.price < state.vwap, // Below value
+      state.volumeDelta < 0, // Negative delta
+      state.price > state.vwap - state.vwapSD1, // Not overextended
     ];
     const conf = calcConfluence(factors);
     const reasons: string[] = [];
@@ -802,7 +883,7 @@ function detectSellSetup(bars: Bar[], state: MarketState): { detected: boolean; 
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detectBreakoutLong(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detectBreakoutLong(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 3) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const curr = bars[bars.length - 1];
   const prev = bars[bars.length - 2];
@@ -835,7 +916,7 @@ function detectBreakoutLong(bars: Bar[], state: MarketState): { detected: boolea
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detectBreakoutShort(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
+export function detectBreakoutShort(bars: Bar[], state: MarketState): { detected: boolean; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 3) return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
   const curr = bars[bars.length - 1];
   const prev = bars[bars.length - 2];
@@ -868,7 +949,7 @@ function detectBreakoutShort(bars: Bar[], state: MarketState): { detected: boole
   return { detected: false, confluence: 0, confluenceLabel: "", reason: "" };
 }
 
-function detectClimaxReversal(bars: Bar[], state: MarketState): { detected: boolean; direction: "LONG" | "SHORT"; confluence: number; confluenceLabel: string; reason: string } {
+export function detectClimaxReversal(bars: Bar[], state: MarketState): { detected: boolean; direction: "LONG" | "SHORT"; confluence: number; confluenceLabel: string; reason: string } {
   if (bars.length < 7) return { detected: false, direction: "LONG", confluence: 0, confluenceLabel: "", reason: "" };
   const curr = bars[bars.length - 1];
   const prev = bars[bars.length - 2];
@@ -986,7 +1067,7 @@ function sentimentLabel(s: MarketState): string {
   return "NEUTRAL";
 }
 
-function manageTrailingStop(trade: OpenTrade, bar: Bar, state: MarketState): void {
+export function manageTrailingStop(trade: OpenTrade, bar: Bar, state: MarketState): void {
   trade.barsSinceEntry++;
 
   if (trade.direction === "LONG") {
@@ -1342,6 +1423,28 @@ async function simulateTick(session: TraderSession) {
             checklist,
           };
 
+          // APEX PRO-FIRM RULES & FILTERS
+          const winRate = (session.wins + session.losses) > 0 ? (session.wins / (session.wins + session.losses)) : 1.0;
+          const isConsistent = winRate >= 0.60;
+          const isStrongTrend = state.adx > 35; // Increased for A+
+          const isTrendAligned = (direction === "LONG" && state.bias === "UPTREND") || (direction === "SHORT" && state.bias === "DOWNTREND"); // Strict alignment
+          const mtfAligned = isMTFAligned(recentBars, direction);
+          const hasClimaxProtection = (detectedPattern.includes("Reversal")) ? isVolumeClimax(recentBars, state) : true;
+
+          const isAplus = confluence >= 7 && isStrongTrend && isTrendAligned && mtfAligned && hasClimaxProtection;
+
+          if (!isAplus) {
+            session.logs.push(makeLog({
+              id: logIdCounter++, timestamp: ts, market: mk, timeframe: tf, pattern: detectedPattern,
+              action: "RULE BLOCK", direction,
+              entry, stop, target,
+              cumPnl: session.cumPnl,
+              reason: `Blocked: Not A+ Setup (Conf: ${confluence}, ADX: ${state.adx.toFixed(1)}, Trend: ${state.bias}, MTF: ${mtfAligned}, Climax: ${hasClimaxProtection})`,
+            }));
+            delete session.openTrades[tradeKey];
+            continue;
+          }
+
           session.logs.push(makeLog({
             id: logIdCounter++, timestamp: ts, market: mk, timeframe: tf, pattern: detectedPattern,
             action: direction === "LONG" ? "LONG ENTERED" : "SHORT ENTERED", direction,
@@ -1361,6 +1464,7 @@ async function simulateTick(session: TraderSession) {
                   id: logIdCounter++, timestamp: getESTTime(), market: mk, timeframe: tf, pattern: detectedPattern,
                   action: "TRADOVATE ORDER", direction,
                   entry, stop, target,
+                  cumPnl: session.cumPnl,
                   reason: `Bracket order placed — Entry: ${result.entryOrderId}, SL: ${result.slOrderId}, TP: ${result.tpOrderId}`,
                   dataSource: "TRADOVATE",
                 }));
@@ -1369,6 +1473,7 @@ async function simulateTick(session: TraderSession) {
                   id: logIdCounter++, timestamp: getESTTime(), market: mk, timeframe: tf, pattern: detectedPattern,
                   action: "TRADOVATE ERROR", direction,
                   entry, stop, target,
+                  cumPnl: session.cumPnl,
                   reason: `Order failed: ${result.error}`,
                   dataSource: "TRADOVATE",
                 }));
@@ -1454,6 +1559,7 @@ export function startTrader(config: {
   session.logs.push(makeLog({
     id: logIdCounter++, timestamp: getESTTime(),
     action: "SCANNING",
+    cumPnl: session.cumPnl,
     reason: `Enabled patterns: ${enabledNames} | Timeframes: ${enabledTFs}`,
   }));
 
